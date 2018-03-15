@@ -1,0 +1,1 @@
+GET http://localhost:8080?url=https://sis-shonei.herokuapp.com/get/salt/student

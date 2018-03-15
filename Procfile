@@ -1,0 +1,1 @@
+web: CORS-anywhere
