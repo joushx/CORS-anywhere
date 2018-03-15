@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,11 +15,24 @@ func main() {
 	}
 
 	port := os.Getenv("PORT")
-
+	fmt.Println(port)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if len(r.URL.Query()["url"]) != 1 {
+			http.Error(w, "url param missing.", http.StatusBadRequest)
+			return
+		}
+
 		url := r.URL.Query()["url"][0]
 		log.Println(url)
 		log.Println(r.Method)
+
+		if r.Method == http.MethodOptions {
+			headers := w.Header()
+			headers.Add("Access-Control-Allow-Origin", "*")
+			headers.Add("Access-Control-Allow-Headers", "Content-Type, Origin, Accept, token, Authorization")
+			headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			return
+		}
 
 		newRequest, err := http.NewRequest(r.Method, url, r.Body)
 		if err != nil {
@@ -26,7 +40,21 @@ func main() {
 			http.Error(w, "Failed to make request.", http.StatusInternalServerError)
 			return
 		}
-		copyToRequest(r.Header, r.Cookies(), newRequest)
+
+		// copy the headers of the request
+		for header, index := range r.Header {
+			for _, val := range index {
+				// fmt.Println(header, val)
+				newRequest.Header.Add(header, val)
+			}
+		}
+
+		fmt.Println(r.Cookies())
+		// copy cookies of the request
+		for _, cookie := range r.Cookies() {
+			fmt.Println("cookie - ", cookie)
+			newRequest.AddCookie(cookie)
+		}
 
 		res, err := client.Do(newRequest)
 		if err != nil {
@@ -41,10 +69,15 @@ func main() {
 			http.Error(w, "Failed to read data from response", http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Content-Type", res.Header.Get("Content-Type"))
+
+		w.Header().Add("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Add("Content-Type", res.Header.Get("Content-Type"))
+		w.Header().Add("Access-Control-Allow-Credentials", "true")
+
+		// fmt.Println(r.Header.Get("Origin"))
 
 		w.Write(body)
+		// log.Println(string(body))
 
 		// copy cookies to response
 		for _, cookie := range res.Cookies() {
@@ -53,18 +86,4 @@ func main() {
 	})
 
 	log.Println(http.ListenAndServe(":"+port, nil))
-}
-
-func copyToRequest(h http.Header, c []*http.Cookie, r *http.Request) {
-	// copy the headers of the request
-	for header, index := range h {
-		for _, val := range index {
-			r.Header.Add(header, val)
-		}
-	}
-
-	// copy cookies to request
-	for _, cookie := range c {
-		r.AddCookie(cookie)
-	}
 }
