@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -11,6 +12,8 @@ func main() {
 	client := http.Client{
 		Timeout: time.Duration(5 * time.Second),
 	}
+
+	port := os.Getenv("PORT")
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		url := r.URL.Query()["url"][0]
@@ -49,7 +52,7 @@ func main() {
 		}
 	})
 
-	log.Println(http.ListenAndServe(":8080", nil))
+	log.Println(http.ListenAndServe(":"+port, nil))
 }
 
 func copyToRequest(h http.Header, c []*http.Cookie, r *http.Request) {

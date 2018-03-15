@@ -1,1 +1,1 @@
-GET http://localhost:8080?url=https://sis-shonei.herokuapp.com/get/salt/student
+GET https://shonei-cors.herokuapp.com?url=https://sis-shonei.herokuapp.com/get/salt/student
