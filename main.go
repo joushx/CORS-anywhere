@@ -70,6 +70,9 @@ func main() {
 			return
 		}
 
+		for k, v := range res.Header {
+			w.Header().Add(k, v[0])
+		}
 		w.Header().Add("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 		w.Header().Add("Content-Type", res.Header.Get("Content-Type"))
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
